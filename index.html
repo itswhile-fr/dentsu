@@ -1,0 +1,383 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Jeu While x Dentsu</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Layout : une colonne mobile, un écran à la fois, fond bleu While avec neige. Charte unique (bleu), pas de thème clair/sombre. */
+:root{
+  --blue:#1D3FF5; --blue-hi:#4062FF; --blue-lo:#0F23B8; --violet:rgba(112,64,255,.42);
+  --mark:#FFE24D; --ink:#101318; --muted:#4B5566; --line:#E3E7EC; --paper:#FFFFFF;
+  --font:Inter,'Helvetica Neue',Arial,sans-serif;
+  color-scheme:dark;
+}
+html,body{height:100%}
+body{margin:0;background:var(--blue-lo);color:var(--paper);font-family:var(--font);-webkit-font-smoothing:antialiased}
+.bg{position:fixed;inset:0;background:radial-gradient(60% 70% at 104% 112%,var(--violet) 0%,rgba(112,64,255,0) 60%),radial-gradient(118% 92% at 12% -6%,var(--blue-hi) 0%,var(--blue) 44%,var(--blue-lo) 100%);z-index:0}
+canvas.fx{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+#snow{z-index:1}#confetti{z-index:20}
+.wrap{position:relative;z-index:2;min-height:100%;box-sizing:border-box;max-width:480px;margin:0 auto;padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));padding-block:22px 28px;display:flex;flex-direction:column;gap:22px}
+header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+header img{width:112px;height:auto;display:block;margin-left:-2px}
+header .tag{font-size:11px;font-weight:600;color:var(--mark);text-align:right;line-height:1.35;padding-top:6px}
+.prog{height:4px;border-radius:100px;background:rgba(255,255,255,.18);overflow:hidden}
+.prog i{display:block;height:100%;width:0;background:var(--mark);border-radius:100px;transition:width .5s cubic-bezier(.2,.8,.2,1)}
+.screen{display:flex;flex-direction:column;gap:18px;flex:1}
+.screen.in{animation:in .5s cubic-bezier(.2,.8,.2,1) both}
+@keyframes in{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+.eb{display:flex;align-items:center;gap:10px;font-size:12px;font-weight:500}
+.eb i{display:block;width:22px;height:3px;border-radius:100px;background:var(--mark);flex:none}
+.eb span{opacity:.75}
+h1{margin:0;font-size:38px;line-height:1.05;font-weight:400;letter-spacing:-.035em;text-wrap:balance}
+h1 em{font-style:normal;font-weight:500;color:var(--mark)}
+h2{margin:0;font-size:26px;line-height:1.15;font-weight:500;letter-spacing:-.025em;text-wrap:balance}
+p{margin:0;font-size:15px;line-height:1.5}
+.sub{opacity:.82}
+.card{background:var(--paper);color:var(--ink);border-radius:20px;padding:20px;box-shadow:0 30px 60px -20px rgba(9,14,40,.7);display:flex;flex-direction:column;gap:14px}
+.card p{color:var(--muted);font-size:14px}
+.sq{display:flex;align-items:center;gap:10px;background:var(--paper);color:var(--ink);border-radius:100px;padding:12px 16px;font-size:14px;box-shadow:0 18px 36px -14px rgba(9,14,40,.6)}
+.sq u{display:inline-block;width:2px;height:16px;background:var(--blue);margin-left:-6px;animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+.facts{display:flex;gap:8px;flex-wrap:wrap}
+.facts span{font-size:12px;font-weight:500;padding:7px 12px;border-radius:100px;background:rgba(255,255,255,.1);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.28)}
+.btn{appearance:none;border:0;cursor:pointer;font:600 16px/1 var(--font);padding:18px 22px;border-radius:100px;background:var(--mark);color:var(--ink);display:flex;align-items:center;justify-content:center;gap:10px;width:100%;box-shadow:0 14px 30px -12px rgba(9,14,40,.65);transition:transform .15s}
+.btn:active{transform:scale(.98)}
+.btn[disabled]{opacity:.45;cursor:default}
+.btn.ghost{background:transparent;color:var(--paper);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.4)}
+.btn:focus-visible,.opt:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:3px solid var(--mark);outline-offset:2px}
+.spacer{flex:1}
+.qnum{font-size:12px;font-weight:600;color:var(--mark);font-variant-numeric:tabular-nums}
+.opts{display:flex;flex-direction:column;gap:10px}
+.opt{appearance:none;border:0;cursor:pointer;text-align:left;font:500 15px/1.35 var(--font);padding:16px 18px;border-radius:16px;background:var(--paper);color:var(--ink);display:flex;align-items:center;gap:12px;box-shadow:0 10px 24px -14px rgba(9,14,40,.6);transition:transform .15s,background .25s,color .25s,opacity .25s;animation:in .45s cubic-bezier(.2,.8,.2,1) both}
+.opt b{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:600;background:#EEF1FF;color:var(--blue)}
+.opt:active{transform:scale(.985)}
+.opt.ok{background:var(--mark)}
+.opt.ok b{background:var(--ink);color:var(--mark)}
+.opt.ko{background:rgba(255,255,255,.14);color:var(--paper);box-shadow:inset 0 0 0 1.5px rgba(255,255,255,.35)}
+.opt.ko b{background:rgba(255,255,255,.2);color:var(--paper)}
+.opt.dim{opacity:.45}
+.opts.locked .opt{cursor:default}
+.explain{font-size:14px;line-height:1.45;padding:14px 16px;border-radius:14px;background:rgba(9,14,40,.28);animation:in .4s both}
+.explain strong{color:var(--mark);font-weight:600}
+label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;color:var(--ink)}
+input,select,textarea{font:400 16px/1.3 var(--font);color:var(--ink);background:#F4F6FB;border:1.5px solid var(--line);border-radius:12px;padding:13px 14px;width:100%;box-sizing:border-box}
+textarea{min-height:96px;resize:vertical}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row2>*{min-width:0}
+.check{flex-direction:row;align-items:flex-start;gap:10px;font-weight:400;color:var(--muted);line-height:1.4}
+.check input{width:20px;height:20px;flex:none;margin:1px 0 0;accent-color:var(--blue)}
+.check a{color:var(--blue)}
+.err{font-size:13px;color:#C62828;min-height:1em}
+.score{font-size:64px;line-height:1;font-weight:500;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+.score small{font-size:28px;opacity:.6}
+.mail{display:inline-flex;align-items:center;gap:8px;font-weight:600;user-select:all}
+.note{font-size:12px;opacity:.65}
+.hint{display:flex;flex-direction:column;gap:8px;padding:14px 16px;border-radius:16px;background:rgba(9,14,40,.28);box-shadow:inset 0 0 0 1.5px var(--mark);font-size:14px;line-height:1.45}
+.hint strong{color:var(--mark);font-weight:600}
+.hint .link{align-self:flex-start;padding:0;opacity:.9}
+.link{appearance:none;background:none;border:0;color:var(--paper);opacity:.75;font:500 13px var(--font);text-decoration:underline;cursor:pointer;padding:6px 0;align-self:center}
+footer{font-size:11px;opacity:.6;text-align:center}
+@media (max-width:360px){h1{font-size:32px}.row2{grid-template-columns:1fr}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+
+<div class="bg"></div>
+<canvas id="snow" class="fx" aria-hidden="true"></canvas>
+<canvas id="confetti" class="fx" aria-hidden="true"></canvas>
+
+<div class="wrap">
+  <header>
+    <img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAxNzQ2IDc3MSIgZmlsbD0ibm9uZSI+PGRlZnM+PHJhZGlhbEdyYWRpZW50IGlkPSJneSIgY3g9IjM1JSIgY3k9IjMyJSIgcj0iNzUlIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNGRkYzQTYiLz48c3RvcCBvZmZzZXQ9Ii40NSIgc3RvcC1jb2xvcj0iI0ZGRTI0RCIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI0U5QjgwMCIvPjwvcmFkaWFsR3JhZGllbnQ+PHJhZGlhbEdyYWRpZW50IGlkPSJndyIgY3g9IjM1JSIgY3k9IjMyJSIgcj0iNzUlIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNGRkZGRkYiLz48c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iI0YzRjVGRiIvPjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI0MzQ0VGRiIvPjwvcmFkaWFsR3JhZGllbnQ+PC9kZWZzPgo8cGF0aCBkPSJNMTcxOS4wMSA0ODIuODA4QzE3MzIuMiA0ODIuODA4IDE3NDIuOSA0NzIuMTEyIDE3NDIuOSA0NTguOTE4QzE3NDIuOSA0NDUuNzIzIDE3MzIuMiA0MzUuMDI3IDE3MTkuMDEgNDM1LjAyN0MxNzA1LjgyIDQzNS4wMjcgMTY5NS4xMiA0NDUuNzIzIDE2OTUuMTIgNDU4LjkxOEMxNjk1LjEyIDQ3Mi4xMTIgMTcwNS44MiA0ODIuODA4IDE3MTkuMDEgNDgyLjgwOFoiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSIxLjAzNTg5Ij48L3BhdGg+CjxwYXRoIGQ9Ik0xNzE3LjU1IDQ1Ni43NThDMTcxOS4wMyA0NTYuNzU4IDE3MjAuMTEgNDU2LjQ2MSAxNzIwLjc2IDQ1NS44OTRDMTcyMS40MSA0NTUuMzU0IDE3MjEuNzYgNDU0LjQzNiAxNzIxLjc2IDQ1My4xNDFDMTcyMS43NiA0NTEuODcyIDE3MjEuNDEgNDUwLjk4MSAxNzIwLjc2IDQ1MC40MTRDMTcyMC4xMSA0NDkuODc0IDE3MTkuMDMgNDQ5LjYwNCAxNzE3LjU1IDQ0OS42MDRIMTcxNC41M1Y0NTYuNzU4SDE3MTcuNTVaTTE3MTQuNTMgNDYxLjY5OFY0NzIuMjI2SDE3MDcuMzVWNDQ0LjM5NEgxNzE4LjMxQzE3MjEuOTggNDQ0LjM5NCAxNzI0LjY1IDQ0NS4wMTUgMTcyNi4zNSA0NDYuMjU3QzE3MjguMDggNDQ3LjQ3MiAxNzI4LjkxIDQ0OS40MTUgMTcyOC45MSA0NTIuMDg4QzE3MjguOTEgNDUzLjkyNCAxNzI4LjQ4IDQ1NS40MzUgMTcyNy41OSA0NTYuNjIzQzE3MjYuNyA0NTcuNzg0IDE3MjUuMzggNDU4LjY3NSAxNzIzLjU3IDQ1OS4yMTVDMTcyNC41NyA0NTkuNDU4IDE3MjUuNDMgNDU5Ljk3IDE3MjYuMjIgNDYwLjc1M0MxNzI3IDQ2MS41MzYgMTcyNy43OCA0NjIuNzI0IDE3MjguNTYgNDY0LjM0NEwxNzMyLjQ4IDQ3Mi4yMjZIMTcyNC44NEwxNzIxLjQ0IDQ2NS4zMTVDMTcyMC43NiA0NjMuOTM5IDE3MjAuMDYgNDYyLjk2NyAxNzE5LjM2IDQ2Mi40ODFDMTcxOC42NiA0NjEuOTY4IDE3MTcuNzEgNDYxLjY5OCAxNzE2LjU1IDQ2MS42OThIMTcxNC41M1oiIGZpbGw9IiNGRkZGRkYiPjwvcGF0aD4KPHBhdGggZD0iTTExODkuMjYgNDgwLjAxNVYxMzMuODYzSDEyNTYuNjVWNDgwLjAxNUgxMTg5LjI2Wk0xMjIzLjI5IDgwLjQ1MzJDMTIxMS41NyA4MC40NTMyIDEyMDEuNTEgNzYuNTQ3IDExOTMuMSA2OC43MzQ1QzExODQuODMgNjAuNzcxOCAxMTgwLjcgNTEuMzA2NyAxMTgwLjcgNDAuMzM5M0MxMTgwLjcgMjkuMjIxNiAxMTg0LjgzIDE5Ljc1NjUgMTE5My4xIDExLjk0NEMxMjAxLjUxIDMuOTgxMzQgMTIxMS41NyAwIDEyMjMuMjkgMEMxMjM1LjAxIDAgMTI0NSAzLjk4MTM0IDEyNTMuMjcgMTEuOTQ0QzEyNjEuNjggMTkuNzU2NSAxMjY1Ljg5IDI5LjIyMTYgMTI2NS44OSA0MC4zMzkzQzEyNjUuODkgNTEuMzA2NyAxMjYxLjY4IDYwLjc3MTggMTI1My4yNyA2OC43MzQ1QzEyNDUgNzYuNTQ3IDEyMzUuMDEgODAuNDUzMiAxMjIzLjI5IDgwLjQ1MzJaIiBmaWxsPSIjRkZGRkZGIj48L3BhdGg+CjxwYXRoIGQ9Ik0xMzUyLjg5IDE4LjQ3OTRWNDgwLjAxNUgxMjg1LjUxVjE4LjQ3OTRIMTM1Mi44OVoiIGZpbGw9IiNGRkZGRkYiPjwvcGF0aD4KPHBhdGggZD0iTTE1NDEuOTYgNDg3LjAwMUMxNTA3Ljg1IDQ4Ny4wMDEgMTQ3OC40OCA0NzkuNzE0IDE0NTMuODQgNDY1LjE0MUMxNDI5LjM1IDQ1MC40MTggMTQxMC40MiA0MjkuNzYgMTM5Ny4wNSA0MDMuMTY3QzEzODMuODMgMzc2LjQyNSAxMzc3LjIyIDM0NS4xIDEzNzcuMjIgMzA5LjE5M0MxMzc3LjIyIDI3My43MzYgMTM4My44MyAyNDIuNDg2IDEzOTcuMDUgMjE1LjQ0M0MxNDEwLjQyIDE4OC40IDE0MjkuMDUgMTY3LjI5MiAxNDUyLjk0IDE1Mi4xMTdDMTQ3Ni45OCAxMzYuOTQzIDE1MDUuMDcgMTI5LjM1NiAxNTM3LjIyIDEyOS4zNTZDMTU1Ni43NiAxMjkuMzU2IDE1NzUuNjkgMTMyLjU4NiAxNTk0LjAyIDEzOS4wNDdDMTYxMi4zNCAxNDUuNTA3IDE2MjguOCAxNTUuNjQ4IDE2NDMuMzcgMTY5LjQ3QzE2NTcuOTQgMTgzLjI5MiAxNjY5LjQ0IDIwMS4yNDYgMTY3Ny44NSAyMjMuMzMxQzE2ODYuMjYgMjQ1LjI2NiAxNjkwLjQ3IDI3MS45MzMgMTY5MC40NyAzMDMuMzMzVjMyNy4yMjFIMTQxNS4zMVYyNzYuNzQxSDE2MjQuNDRDMTYyNC40NCAyNTkuMDEzIDE2MjAuODMgMjQzLjMxMyAxNjEzLjYyIDIyOS42NDFDMTYwNi40MSAyMTUuODE5IDE1OTYuMjcgMjA0LjkyNyAxNTgzLjIgMTk2Ljk2NEMxNTcwLjI4IDE4OS4wMDEgMTU1NS4xIDE4NS4wMiAxNTM3LjY4IDE4NS4wMkMxNTE4Ljc1IDE4NS4wMiAxNTAyLjIyIDE4OS42NzcgMTQ4OC4xIDE5OC45OTJDMTQ3NC4xMiAyMDguMTU3IDE0NjMuMzEgMjIwLjE3NiAxNDU1LjY0IDIzNS4wNUMxNDQ4LjEzIDI0OS43NzMgMTQ0NC4zOCAyNjUuNzc0IDE0NDQuMzggMjgzLjA1MVYzMjIuNDg5QzE0NDQuMzggMzQ1LjYyNiAxNDQ4LjQzIDM2NS4zMDcgMTQ1Ni41NSAzODEuNTMzQzE0NjQuODEgMzk3Ljc1OSAxNDc2LjMgNDEwLjE1NCAxNDkxLjAzIDQxOC43MTdDMTUwNS43NSA0MjcuMTMxIDE1MjIuOTUgNDMxLjMzNyAxNTQyLjYzIDQzMS4zMzdDMTU1NS40IDQzMS4zMzcgMTU2Ny4wNSA0MjkuNTM0IDE1NzcuNTYgNDI1LjkyOUMxNTg4LjA4IDQyMi4xNzMgMTU5Ny4xNyA0MTYuNjE0IDE2MDQuODMgNDA5LjI1MkMxNjEyLjQ5IDQwMS44OSAxNjE4LjM1IDM5Mi44MDEgMTYyMi40MSAzODEuOTg0TDE2ODYuMTkgMzkzLjQ3N0MxNjgxLjA4IDQxMi4yNTcgMTY3MS45MSA0MjguNzA4IDE2NTguNjkgNDQyLjgzMUMxNjQ1LjYyIDQ1Ni44MDMgMTYyOS4xNyA0NjcuNjk1IDE2MDkuMzQgNDc1LjUwOEMxNTg5LjY2IDQ4My4xNyAxNTY3LjIgNDg3LjAwMSAxNTQxLjk2IDQ4Ny4wMDFaIiBmaWxsPSIjRkZGRkZGIj48L3BhdGg+CjxwYXRoIGQ9Ik05NDAuMDIxIDI3My40NzRWNDc5LjAwMkg4NzIuNjM5VjE3LjQ2NjhIOTM5LjEyVjE4OS4xOUg5NDMuNDAxQzk1MS41MTQgMTcwLjU2IDk2My45MDkgMTU1Ljc2MiA5ODAuNTg2IDE0NC43OTRDOTk3LjI2MiAxMzMuODI3IDEwMTkuMDUgMTI4LjM0MyAxMDQ1Ljk0IDEyOC4zNDNDMTA2OS42OCAxMjguMzQzIDEwOTAuNDEgMTMzLjIyNiAxMTA4LjE0IDE0Mi45OTJDMTEyNi4wMiAxNTIuNzU3IDExMzkuODQgMTY3LjMzIDExNDkuNjEgMTg2LjcxMUMxMTU5LjUyIDIwNS45NDIgMTE2NC40OCAyMjkuOTggMTE2NC40OCAyNTguODI2VjQ3OS4wMDJIMTA5Ny4xVjI2Ni45MzlDMTA5Ny4xIDI0MS41NDkgMTA5MC41NiAyMjEuODY3IDEwNzcuNDkgMjA3Ljg5NUMxMDY0LjQyIDE5My43NzIgMTA0Ni4yNCAxODYuNzExIDEwMjIuOTUgMTg2LjcxMUMxMDA3LjAzIDE4Ni43MTEgOTkyLjc1NSAxOTAuMDkyIDk4MC4xMzUgMTk2Ljg1MkM5NjcuNjY1IDIwMy42MTMgOTU3LjgyNCAyMTMuNTI5IDk1MC42MTMgMjI2LjZDOTQzLjU1MiAyMzkuNTIgOTQwLjAyMSAyNTUuMTQ1IDk0MC4wMjEgMjczLjQ3NFoiIGZpbGw9IiNGRkZGRkYiPjwvcGF0aD4KPHBhdGggZD0iTTM4MS4zNDMgNDc3LjQxNEwyNTMuMzM5IDE1Ljg3ODlIMzI2LjU4MUw0MTYuNDk5IDM3My4yOTlINDIwLjc4MUw1MTQuMzA1IDE1Ljg3ODlINTg2Ljg3MUw2ODAuMzk1IDM3My41MjRINjg0LjY3N0w3NjcuMTk3IDQ0LjQ3ODlDNzcxLjM5OCAyNy43Mjc1IDc4Ni41ODMgMTYuMDc2MyA4MDMuODUxIDE2LjM1NTNMODcyLjYzOSAxNy40NjY5Vjg3LjMzNjVWODcuMzM2NUM4NDYuMjQ3IDg3LjMzNjUgODIzLjA5NCAxMDQuOTM0IDgxNi4wMyAxMzAuMzYyTDcxOS42MDcgNDc3LjQxNEg2NDkuNTIxTDU1Mi4zOTEgMTMxLjcxNEg1NDguNzg1TDQ1MS42NTUgNDc3LjQxNEgzODEuMzQzWiIgZmlsbD0idXJsKCNwYWludDBfbGluZWFyXzMyOTlfMTQ5X2NvdikiPjwvcGF0aD4KPHJlY3QgeD0iNTAuOTY5MiIgeT0iMjU1LjM4NSIgd2lkdGg9IjIxMy40IiBoZWlnaHQ9IjUwLjk2MTMiIGZpbGw9InVybCgjcGFpbnQxX2xpbmVhcl8zMjk5XzE0OV9jb3YpIj48L3JlY3Q+CjxjaXJjbGUgY3g9IjQ3Ljc4NDEiIGN5PSIyODAuODY2IiByPSIyNS40ODA2IiBmaWxsPSIjRkZGRkZGIj48L2NpcmNsZT4KPHJlY3QgeD0iODUuOTk3MSIgeT0iMzQ0LjU2OSIgd2lkdGg9IjIxMy40IiBoZWlnaHQ9IjUwLjk2MTMiIGZpbGw9InVybCgjcGFpbnQyX2xpbmVhcl8zMjk5XzE0OV9jb3YpIj48L3JlY3Q+CjxjaXJjbGUgY3g9Ijg1Ljk5ODIiIGN5PSIzNzAuMDQ5IiByPSIyNS40ODA2IiBmaWxsPSIjRkZGRkZGIj48L2NpcmNsZT4KPHJlY3QgeD0iMjUuNDg5NyIgeT0iNDMzLjc1MSIgd2lkdGg9IjIxMy40IiBoZWlnaHQ9IjUwLjk2MTMiIGZpbGw9InVybCgjcGFpbnQzX2xpbmVhcl8zMjk5XzE0OV9jb3YpIj48L3JlY3Q+CjxjaXJjbGUgY3g9IjI1LjQ4MDYiIGN5PSI0NTkuMjMxIiByPSIyNS40ODA2IiBmaWxsPSIjRkZGRkZGIj48L2NpcmNsZT4KPGRlZnM+CjxsaW5lYXJHcmFkaWVudCBpZD0icGFpbnQwX2xpbmVhcl8zMjk5XzE0OV9jb3YiIHgxPSI3NTMuNTQzIiB5MT0iODQuMTYwNiIgeDI9Ijg2OS40NjMiIHkyPSI4NC4xNjA2IiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CjxzdG9wIHN0b3AtY29sb3I9IiNGRkZGRkYiPjwvc3RvcD4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjRkZGRkZGIiBzdG9wLW9wYWNpdHk9IjAiPjwvc3RvcD4KPC9saW5lYXJHcmFkaWVudD4KPGxpbmVhckdyYWRpZW50IGlkPSJwYWludDFfbGluZWFyXzMyOTlfMTQ5X2NvdiIgeDE9Ijk0LjAyMzciIHkxPSIyODMuNTQ4IiB4Mj0iMjY0LjM3IiB5Mj0iMjgzLjU0OCIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgo8c3RvcCBzdG9wLWNvbG9yPSIjRkZGRkZGIj48L3N0b3A+CjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI0ZGRkZGRiIgc3RvcC1vcGFjaXR5PSIwIj48L3N0b3A+CjwvbGluZWFyR3JhZGllbnQ+CjxsaW5lYXJHcmFkaWVudCBpZD0icGFpbnQyX2xpbmVhcl8zMjk5XzE0OV9jb3YiIHgxPSIxMjkuMDUyIiB5MT0iMzcyLjczMiIgeDI9IjI5OS4zOTciIHkyPSIzNzIuNzMyIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CjxzdG9wIHN0b3AtY29sb3I9IiNGRkZGRkYiPjwvc3RvcD4KPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjRkZGRkZGIiBzdG9wLW9wYWNpdHk9IjAiPjwvc3RvcD4KPC9saW5lYXJHcmFkaWVudD4KPGxpbmVhckdyYWRpZW50IGlkPSJwYWludDNfbGluZWFyXzMyOTlfMTQ5X2NvdiIgeDE9IjY4LjU0NDIiIHkxPSI0NjEuOTE0IiB4Mj0iMjM4Ljg5IiB5Mj0iNDYxLjkxNCIgZ3JhZGllbnRVbml0cz0idXNlclNwYWNlT25Vc2UiPgo8c3RvcCBzdG9wLWNvbG9yPSIjRkZGRkZGIj48L3N0b3A+CjxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI0ZGRkZGRiIgc3RvcC1vcGFjaXR5PSIwIj48L3N0b3A+CjwvbGluZWFyR3JhZGllbnQ+CjwvZGVmcz4KPGxpbmUgeDE9IjkwNiIgeTE9IjQ3NSIgeDI9IjkwNiIgeTI9IjUyMSIgc3Ryb2tlPSIjRkZGRkZGIiBzdHJva2Utd2lkdGg9IjkiLz48cmVjdCB4PSI4OTEuMTIiIHk9IjUxOSIgd2lkdGg9IjI5Ljc1OTk5OTk5OTk5OTk5OCIgaGVpZ2h0PSIyMC4xNiIgcng9IjUuMDQiIGZpbGw9IiNGRkZGRkYiLz48Y2lyY2xlIGN4PSI5MDYiIGN5PSI1ODMuMTYiIHI9IjQ4IiBmaWxsPSJ1cmwoI2d3KSIvPjxlbGxpcHNlIGN4PSI4ODguNzIiIGN5PSI1NjQuOTIiIHJ4PSI5LjYwMDAwMDAwMDAwMDAwMSIgcnk9IjUuNzYiIHRyYW5zZm9ybT0icm90YXRlKC0zNSA4ODguNzIgNTY0LjkyKSIgZmlsbD0iI0ZGRkZGRiIgZmlsbC1vcGFjaXR5PSIuOCIvPjxsaW5lIHgxPSIxMzE5IiB5MT0iNDc2IiB4Mj0iMTMxOSIgeTI9IjYxMiIgc3Ryb2tlPSIjRkZGRkZGIiBzdHJva2Utd2lkdGg9IjkiLz48cmVjdCB4PSIxMjk4LjU0IiB5PSI2MTAiIHdpZHRoPSI0MC45MiIgaGVpZ2h0PSIyNy43MiIgcng9IjYuOTMiIGZpbGw9IiNGRkZGRkYiLz48Y2lyY2xlIGN4PSIxMzE5IiBjeT0iNjk5LjcyIiByPSI2NiIgZmlsbD0idXJsKCNneSkiLz48ZWxsaXBzZSBjeD0iMTI5NS4yNCIgY3k9IjY3NC42NCIgcng9IjEzLjIwMDAwMDAwMDAwMDAwMSIgcnk9IjcuOTIiIHRyYW5zZm9ybT0icm90YXRlKC0zNSAxMjk1LjI0IDY3NC42NCkiIGZpbGw9IiNGRkZGRkYiIGZpbGwtb3BhY2l0eT0iLjgiLz48bGluZSB4MT0iMTU0MiIgeTE9IjQ4MyIgeDI9IjE1NDIiIHkyPSI1NTkiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSI5Ii8+PHJlY3QgeD0iMTUyNi41IiB5PSI1NTciIHdpZHRoPSIzMS4wIiBoZWlnaHQ9IjIxLjAiIHJ4PSI1LjI1IiBmaWxsPSIjRkZGRkZGIi8+PGNpcmNsZSBjeD0iMTU0MiIgY3k9IjYyNC4wIiByPSI1MCIgZmlsbD0idXJsKCNndykiLz48ZWxsaXBzZSBjeD0iMTUyNC4wIiBjeT0iNjA1LjAiIHJ4PSIxMC4wIiByeT0iNi4wIiB0cmFuc2Zvcm09InJvdGF0ZSgtMzUgMTUyNC4wIDYwNS4wKSIgZmlsbD0iI0ZGRkZGRiIgZmlsbC1vcGFjaXR5PSIuOCIvPjwvc3ZnPg==" alt="While">
+    <span class="tag">Jeu concours<br>réservé aux équipes Dentsu</span>
+  </header>
+  <div class="prog" aria-hidden="true"><i id="bar"></i></div>
+  <main id="view" class="screen" aria-live="polite"></main>
+  <footer>While · Search Media · <span id="year"></span></footer>
+</div>
+
+<script>
+/* ===== Réglages (à remplir par While) ===== */
+const ENDPOINT = '';          // URL du script Google (Apps Script) qui reçoit les participations. Vide = mode aperçu, rien n'est envoyé.
+const REGLEMENT_URL = '#';    // Lien vers le règlement du jeu
+const TIRAGE = '23 novembre';
+const CODE_LIMITE = '20 novembre'; // date limite pour ajouter le code secret
+const CODE_QUI = 'Camille, de l\'équipe While';
+const CODE_MAIL = 'camille@itswhile.com';
+
+const Q = [
+  {q:"Quelle est la promesse fondatrice de While ?", o:["Cibler l'internaute immédiatement après sa requête sur les moteurs de recherche","Proposer une data intentionniste grâce aux cookies","Avoir une équipe fort sympathique et réactive"], a:0,
+   e:"L'équipe est sympathique aussi, mais la promesse, c'est la requête."},
+  {q:"Vrai ou faux ? Parce que son ADN vient du search, While est cantonné au bas de funnel.", o:["Faux : la requête s'adapte à l'objectif, notoriété comprise","Vrai : dès qu'il y a un mot-clé, on optimise au CPC","Faux : While a abandonné les mots-clés pour le ciblage météo"], a:0,
+   e:"Une requête informationnelle sert très bien une campagne de notoriété."},
+  {q:"Comment While garantit-il la brand safety sur YouTube ?", o:["En cochant « Contenu adapté » dans DV360","Avec des vidéos identifiées une à une à partir de requêtes réelles","Avec une analyse sémantique des sous-titres"], a:1,
+   e:"Chaque vidéo est sélectionnée une à une, à partir de requêtes réellement tapées."},
+  {q:"Combien d'annonceurs du groupe Dentsu ont fait confiance à While cette année ?", o:["8","15","22"], a:1,
+   e:"15 annonceurs. Merci à vous !"},
+  {q:"Quelle marque a fait l'objet de campagnes While menées par Carat en Italie et aux Pays-Bas cet été ?", o:["Pernod Ricard","Velux","Pandora"], a:1,
+   e:"Velux, avec Carat, en Italie et aux Pays-Bas."}
+];
+const BONUS = {q:"Quelle table préempte Camille quand elle s'installe à l'Atrium ?", o:["La grande table centrale, sur la banquette","Les petites tables en 1 vs 1","Qui est Camille ?"], a:0,
+   e:"La grande table centrale. Si tu ne la connais pas encore, c'est peut-être elle qui te donnera le code secret."};
+const TEAMS = ["Carat","iProspect","Dentsu X","Dentsu Creative","Trading","Autre"];
+
+/* ===== État ===== */
+const params = new URLSearchParams(location.search);
+const S = {etage:(params.get('etage')||'direct').slice(0,12), i:0, answers:[], score:0, bonus:'', code:''};
+const view = document.getElementById('view'), bar = document.getElementById('bar');
+document.getElementById('year').textContent = new Date().getFullYear();
+const LS = 'while-dentsu-2026';
+const store = {get(){try{return localStorage.getItem(LS)}catch(e){return null}}, set(v){try{localStorage.setItem(LS,v)}catch(e){}}, del(){try{localStorage.removeItem(LS)}catch(e){}}};
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function show(html, pct){
+  view.classList.remove('in'); void view.offsetWidth;
+  view.innerHTML = html; view.classList.add('in');
+  bar.style.width = pct + '%';
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+
+/* ===== Écrans ===== */
+function intro(){
+  show(`
+    <div class="eb"><i></i><span>5 questions · 60 secondes</span></div>
+    <h1>Scanne, joue,<br>gagne <em>des AirPods</em>.</h1>
+    <p class="sub">Ton cadeau de Noël en avance, et d'autres lots à la clé. Tirage au sort parmi les meilleurs scores le ${TIRAGE}.</p>
+    <div class="card">
+      <div class="eb" style="color:var(--blue);font-weight:600"><i style="background:var(--blue)"></i><span style="opacity:1">While en une phrase</span></div>
+      <p>La pub diffusée sur la page que l'internaute ouvre immédiatement après sa requête sur un moteur de recherche.</p>
+      <div class="sq"><svg width="15" height="15" viewBox="0 0 20 20" aria-hidden="true"><circle cx="8.5" cy="8.5" r="5.2" fill="none" stroke="#4B5566" stroke-width="1.8"/><path d="M12.5 12.5 L16.5 16.5" stroke="#4B5566" stroke-width="1.8" stroke-linecap="round"/></svg><span id="typed"></span><u></u></div>
+    </div>
+    <div class="hint"><span><strong>Code secret = +1 point.</strong> Demande-le à ${CODE_QUI}, sur place ou par email : <span class="mail">${CODE_MAIL}</span>. Tu peux jouer maintenant et l'ajouter plus tard, jusqu'au ${CODE_LIMITE}.</span><button class="link" id="addcode">J'ai déjà joué, j'ajoute mon code</button></div>
+    <div class="spacer"></div>
+    <button class="btn" id="go">Je joue <span aria-hidden="true">→</span></button>
+  `, 4);
+  typeLoop(document.getElementById('typed'), ["100% des gagnants ont tenté leur chance"]);
+  document.getElementById('addcode').onclick = () => codeScreen(store.get() || '');
+  document.getElementById('go').onclick = () => { S.i = 0; S.answers = []; S.score = 0; S.bonus = ''; question(); };
+}
+
+let typeTimer;
+function typeLoop(el, words){
+  clearTimeout(typeTimer);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches){ el.textContent = words[0]; return; }
+  let w = 0, c = 0, del = false;
+  (function tick(){
+    if (!document.body.contains(el)) return;
+    const word = words[w];
+    c += del ? -1 : 1; el.textContent = word.slice(0, c);
+    let d = del ? 28 : 55;
+    if (!del && c === word.length){ del = true; d = 1600; }
+    else if (del && c === 0){ del = false; w = (w + 1) % words.length; d = 300; }
+    typeTimer = setTimeout(tick, d);
+  })();
+}
+
+function question(isBonus){
+  const it = isBonus ? BONUS : Q[S.i];
+  show(`
+    <span class="qnum">${isBonus ? 'Question bonus · pour le plaisir, sans points' : `Question ${S.i+1} / ${Q.length}`}</span>
+    <h2>${esc(it.q)}</h2>
+    <div class="opts" id="opts">
+      ${it.o.map((o,k) => `<button class="opt" data-k="${k}" style="animation-delay:${80+k*60}ms"><b>${'ABCD'[k]}</b><span>${esc(o)}</span></button>`).join('')}
+    </div>
+    <div id="after"></div>
+    <div class="spacer"></div>
+  `, isBonus ? 84 : 8 + S.i * 15);
+  const opts = document.getElementById('opts');
+  opts.querySelectorAll('.opt').forEach(btn => btn.onclick = () => {
+    if (opts.classList.contains('locked')) return;
+    opts.classList.add('locked');
+    const k = +btn.dataset.k, good = k === it.a;
+    if (isBonus) S.bonus = it.o[k]; else { S.answers[S.i] = it.o[k]; if (good) S.score++; }
+    opts.querySelectorAll('.opt').forEach((b, j) => {
+      b.setAttribute('aria-disabled','true');
+      if (j === it.a) b.classList.add('ok'); else if (j === k) b.classList.add('ko'); else b.classList.add('dim');
+    });
+    if (good) burst(btn);
+    const lastQ = !isBonus && S.i === Q.length - 1;
+    document.getElementById('after').innerHTML = `
+      <div class="explain"><strong>${good ? 'Bien vu.' : 'Raté, mais tu sais maintenant.'}</strong> ${esc(it.e)}</div>
+      <div style="height:14px"></div>
+      <button class="btn" id="next">${isBonus ? 'Dernière étape' : lastQ ? 'Question bonus' : 'Question suivante'} <span aria-hidden="true">→</span></button>`;
+    const nx = document.getElementById('next'); nx.focus({preventScroll:true});
+    nx.onclick = () => { if (isBonus) return form(); S.i++; S.i === Q.length ? question(true) : question(); };
+  });
+}
+
+function form(){
+  show(`
+    <span class="qnum">${S.score} bonne${S.score>1?'s':''} réponse${S.score>1?'s':''} sur ${Q.length}</span>
+    <h2>Plus qu'à t'inscrire au tirage.</h2>
+    <p class="sub">Le tirage au sort se fait parmi les meilleurs scores. Un code secret peut te rapporter 1 point de plus.</p>
+    <form class="card" id="f" novalidate>
+      <div class="row2">
+        <label for="prenom">Prénom<input id="prenom" autocomplete="given-name" required></label>
+        <label for="nom">Nom<input id="nom" autocomplete="family-name" required></label>
+      </div>
+      <label for="email">Email professionnel<input id="email" type="email" autocomplete="email" inputmode="email" placeholder="prenom.nom@dentsu.com" required></label>
+      <label for="equipe">Ton équipe<select id="equipe" required><option value="">Choisir</option>${TEAMS.map(t=>`<option>${t}</option>`).join('')}</select></label>
+      <label for="code">Code secret (facultatif)<input id="code" autocomplete="off" autocapitalize="characters" placeholder="Pas encore ? Tu pourras l'ajouter plus tard"></label>
+      <label class="check" for="reg"><input type="checkbox" id="reg" required><span>J'accepte le <a href="${REGLEMENT_URL}" target="_blank" rel="noopener">règlement du jeu</a>.</span></label>
+      <label class="check" for="optin"><input type="checkbox" id="optin"><span>J'accepte que While me recontacte au sujet de ses offres (facultatif).</span></label>
+      <div class="err" id="err" role="alert"></div>
+      <button class="btn" id="send" type="submit" style="background:var(--blue);color:var(--paper)">Je participe au tirage</button>
+    </form>
+  `, 94);
+  document.getElementById('f').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const v = id => document.getElementById(id).value.trim();
+    const err = document.getElementById('err');
+    if (!v('prenom') || !v('nom')) return err.textContent = "Indique ton prénom et ton nom.";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v('email'))) return err.textContent = "Cet email n'a pas l'air valide. Vérifie-le.";
+    if (!v('equipe')) return err.textContent = "Choisis ton équipe.";
+    if (!document.getElementById('reg').checked) return err.textContent = "Coche l'acceptation du règlement pour participer.";
+    err.textContent = '';
+    const data = {ts:new Date().toISOString(), etage:S.etage, prenom:v('prenom'), nom:v('nom'), email:v('email').toLowerCase(), equipe:v('equipe'),
+      score:S.score, code:v('code'), q1:S.answers[0], q2:S.answers[1], q3:S.answers[2], q4:S.answers[3], q5:S.answers[4], bonus:S.bonus,
+      reglement:true, optin:document.getElementById('optin').checked};
+    const btn = document.getElementById('send'); btn.disabled = true; btn.textContent = 'Envoi…';
+    try{
+      if (ENDPOINT){
+        await fetch(ENDPOINT, {method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify(data)});
+      } else {
+        console.log('[mode aperçu] participation non envoyée', data);
+        await new Promise(r => setTimeout(r, 500));
+      }
+      store.set(data.email); done(data.prenom, !ENDPOINT, !!data.code);
+    }catch(e){
+      btn.disabled = false; btn.textContent = 'Je participe au tirage';
+      err.textContent = "L'envoi n'a pas marché. Vérifie ta connexion et réessaie.";
+    }
+  });
+}
+
+function done(prenom, preview, hasCode){
+  show(`
+    <div class="eb"><i></i><span>Participation enregistrée</span></div>
+    <h1>C'est noté${prenom ? ', ' + esc(prenom) : ''} !</h1>
+    <div class="score">${S.score}<small> / ${Q.length}</small></div>
+    <p class="sub">Tirage au sort parmi les meilleurs scores le ${TIRAGE}. Si tu as saisi un code secret, il est vérifié et ajouté à ton total. Les gagnants seront prévenus par email.</p>
+    ${hasCode ? '' : `<div class="hint"><span><strong>Pas encore le code secret ?</strong> Demande-le à ${CODE_QUI}, sur place ou à <span class="mail">${CODE_MAIL}</span>, puis rescanne le QR pour l'ajouter. Tu as jusqu'au ${CODE_LIMITE}.</span></div>`}
+    <div class="card">
+      <p style="color:var(--ink);font-weight:500">Un brief qui pourrait s'activer sur la requête ?</p>
+      <p>Écris-nous : <span class="mail" style="color:var(--blue)">contact@itswhile.com</span></p>
+    </div>
+    ${preview ? '<p class="note">Mode aperçu : rien n\'a été envoyé.</p>' : ''}
+    <div class="spacer"></div>
+  `, 100);
+  confetti();
+}
+
+function already(){
+  show(`
+    <div class="eb"><i></i><span>Déjà inscrit</span></div>
+    <h1>Tu participes<br>déjà au <em>tirage</em>.</h1>
+    <p class="sub">Une participation par personne. Rendez-vous le ${TIRAGE} pour les résultats.</p>
+    <div class="hint"><span><strong>Tu as le code secret ?</strong> Ajoute-le pour gagner 1 point, jusqu'au ${CODE_LIMITE}.</span></div>
+    <div class="spacer"></div>
+    <button class="btn" id="addcode">J'ajoute mon code secret</button>
+    <button class="link" id="other">Ce n'est pas toi ? Participer avec un autre email</button>
+  `, 100);
+  document.getElementById('addcode').onclick = () => codeScreen(store.get() || '');
+  document.getElementById('other').onclick = () => { store.del(); intro(); };
+}
+
+function codeScreen(email){
+  show(`
+    <div class="eb"><i></i><span>Code secret · +1 point</span></div>
+    <h2>Ajoute ton code secret.</h2>
+    <p class="sub">Utilise le même email que pour ta participation. Le code est vérifié avant le tirage.</p>
+    <form class="card" id="fc" novalidate>
+      <label for="cemail">Email professionnel<input id="cemail" type="email" autocomplete="email" inputmode="email" value="${esc(email)}" placeholder="prenom.nom@dentsu.com"></label>
+      <label for="ccode">Code secret<input id="ccode" autocomplete="off" autocapitalize="characters"></label>
+      <div class="err" id="cerr" role="alert"></div>
+      <button class="btn" id="csend" type="submit" style="background:var(--blue);color:var(--paper)">Ajouter mon code</button>
+    </form>
+    <div class="spacer"></div>
+    <button class="link" id="back">Retour</button>
+  `, 100);
+  document.getElementById('back').onclick = () => store.get() ? already() : intro();
+  document.getElementById('fc').addEventListener('submit', async ev => {
+    ev.preventDefault();
+    const em = document.getElementById('cemail').value.trim().toLowerCase(), cd = document.getElementById('ccode').value.trim();
+    const err = document.getElementById('cerr');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) return err.textContent = "Cet email n'a pas l'air valide. Vérifie-le.";
+    if (!cd) return err.textContent = "Saisis le code secret.";
+    const btn = document.getElementById('csend'); btn.disabled = true; btn.textContent = 'Envoi…';
+    try{
+      if (ENDPOINT) await fetch(ENDPOINT, {method:'POST', mode:'no-cors', headers:{'Content-Type':'text/plain;charset=utf-8'}, body:JSON.stringify({type:'code', email:em, code:cd})});
+      else await new Promise(r => setTimeout(r, 400));
+      show(`
+        <div class="eb"><i></i><span>Code envoyé</span></div>
+        <h1>C'est noté !</h1>
+        <p class="sub">Ton code est enregistré. S'il est bon, ton point bonus sera compté au tirage du ${TIRAGE}.</p>
+        ${ENDPOINT ? '' : '<p class="note">Mode aperçu : rien n\'a été envoyé.</p>'}
+        <div class="spacer"></div>`, 100);
+      confetti();
+    }catch(e){
+      btn.disabled = false; btn.textContent = 'Ajouter mon code';
+      err.textContent = "L'envoi n'a pas marché. Vérifie ta connexion et réessaie.";
+    }
+  });
+}
+
+/* ===== Neige ===== */
+(function snow(){
+  const cv = document.getElementById('snow'), cx = cv.getContext('2d');
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  let W, H, F = [];
+  const size = () => { const d = devicePixelRatio || 1; W = innerWidth; H = innerHeight; cv.width = W*d; cv.height = H*d; cx.setTransform(d,0,0,d,0,0); };
+  size(); addEventListener('resize', size);
+  for (let i = 0; i < 70; i++) F.push({x:Math.random()*W, y:Math.random()*H, r:Math.random()*2.2+.6, s:Math.random()*.5+.25, w:Math.random()*Math.PI*2});
+  (function loop(){
+    cx.clearRect(0,0,W,H);
+    for (const f of F){
+      f.y += f.s; f.w += .01; f.x += Math.sin(f.w)*.3;
+      if (f.y > H+4){ f.y = -4; f.x = Math.random()*W; }
+      cx.globalAlpha = .25 + f.r/6; cx.fillStyle = '#FFFFFF';
+      cx.beginPath(); cx.arc(f.x, f.y, f.r, 0, 7); cx.fill();
+    }
+    requestAnimationFrame(loop);
+  })();
+})();
+
+/* ===== Confettis ===== */
+const CV = document.getElementById('confetti'), CX = CV.getContext('2d');
+let P = [], running = false;
+function sizeC(){ const d = devicePixelRatio || 1; CV.width = innerWidth*d; CV.height = innerHeight*d; CX.setTransform(d,0,0,d,0,0); }
+sizeC(); addEventListener('resize', sizeC);
+const COLS = ['#FFE24D','#FFFFFF','#4062FF','#FFE24D'];
+function spawn(x, y, n, spread){
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  for (let i = 0; i < n; i++){
+    const a = -Math.PI/2 + (Math.random()-.5)*spread, v = 4 + Math.random()*7;
+    P.push({x, y, vx:Math.cos(a)*v, vy:Math.sin(a)*v, w:5+Math.random()*6, h:3+Math.random()*4, r:Math.random()*6, vr:(Math.random()-.5)*.3, c:COLS[i%COLS.length], life:0});
+  }
+  if (!running){ running = true; requestAnimationFrame(stepC); }
+}
+function stepC(){
+  CX.clearRect(0,0,innerWidth,innerHeight);
+  P = P.filter(p => p.life < 220 && p.y < innerHeight + 20);
+  for (const p of P){
+    p.life++; p.vy += .18; p.vx *= .99; p.x += p.vx; p.y += p.vy; p.r += p.vr;
+    CX.save(); CX.translate(p.x, p.y); CX.rotate(p.r); CX.fillStyle = p.c; CX.fillRect(-p.w/2, -p.h/2, p.w, p.h); CX.restore();
+  }
+  if (P.length) requestAnimationFrame(stepC); else { running = false; CX.clearRect(0,0,innerWidth,innerHeight); }
+}
+function burst(el){ const r = el.getBoundingClientRect(); spawn(r.left + r.width*.85, r.top + r.height/2, 26, 1.6); }
+function confetti(){ spawn(innerWidth*.2, innerHeight*.75, 70, 1.2); setTimeout(() => spawn(innerWidth*.8, innerHeight*.75, 70, 1.2), 180); }
+
+/* ===== Démarrage ===== */
+store.get() ? already() : intro();
+</script>
+
+</body>
+</html>
