@@ -268,7 +268,7 @@ function done(prenom, preview, hasCode){
     <p class="sub">Tirage au sort parmi les meilleurs scores le ${TIRAGE}. Si tu as saisi un code secret, il est vérifié et ajouté à ton total. Les gagnants seront prévenus par email.</p>
     ${hasCode ? '' : `<div class="hint"><span><strong>Pas encore le code secret ?</strong> Demande-le à ${CODE_QUI}, sur place ou à <span class="mail">${CODE_MAIL}</span>, puis rescanne le QR pour l'ajouter. Tu as jusqu'au ${CODE_LIMITE}.</span></div>`}
     <div class="card">
-      <p style="color:var(--ink);font-weight:500">Un brief qui pourrait s'activer sur la requête ?</p>
+      <p style="color:var(--ink);font-weight:500">Ta prochaine campagne commence par une requête.</p>
       <p>Écris-nous : <span class="mail" style="color:var(--blue)">contact@itswhile.com</span></p>
     </div>
     ${preview ? '<p class="note">Mode aperçu : rien n\'a été envoyé.</p>' : ''}
